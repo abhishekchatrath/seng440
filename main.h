@@ -41,7 +41,7 @@ struct WAVE_FORMAT_CHUNK {
 struct WAVE_DATA_CHUNK {
     unsigned char   sGroupID[4];        // sGroupID = "data"
     __uint32_t      dwChunkSize;        // dwChunkSize = /* varies */
-    __uint16_t      sampleData;         // sampleData = dwSamplesPerSec * wChannels 
+    short           *sampleData;        // sampleData = dwSamplesPerSec * wChannels 
 };
 
 /**
@@ -53,7 +53,7 @@ struct WAVE_DATA_CHUNK {
 struct WAVE_DATA_CHUNK_COMPRESSED {
     unsigned char   sGroupID[4];        // sGroupID = "data"
     __uint32_t      dwChunkSize;        // dwChunkSize = /* varies */
-    __uint8_t       sampleData;         // sampleData = dwSamplesPerSec * wChannels 
+    short           *sampleData;        // sampleData = dwSamplesPerSec * wChannels 
 };
 
 struct WAVE {

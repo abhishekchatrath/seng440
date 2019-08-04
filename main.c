@@ -7,11 +7,12 @@ FILE *fp;
 unsigned char buffer[4];
 struct WAVE wave;
 
+unsigned long numSamples;
+unsigned int sizeOfEachSample;
 
-struct WAVE readWaveFile() {    
 
-    printf("\nBegin Reading Wave File:\t...\n");
-
+void readWaveFileHeaders() {
+    printf("\nBegin Reading Wave Headers:\t...\n");
 
     // Read wave header
     fread(wave.waveHeader.sGroupID,                 sizeof(wave.waveHeader.sGroupID), 1, fp);
@@ -65,17 +66,51 @@ struct WAVE readWaveFile() {
 
     fread(buffer,                                sizeof(buffer), 1, fp);
     wave.waveDataChunk.dwChunkSize = (buffer[0]) | (buffer[1] << 8) | (buffer[2] << 16) | (buffer[3] << 24);
-    
-    // wave.waveDataChunk.sampleData =                 (__uint16_t*) malloc(sizeof(char) * *wave.waveDataChunk.dwChunkSize);
-    // fread(wave.waveDataChunk.sampleData,            sizeof(wave.waveDataChunk.sampleData), 1, fp);    
-    
-    printf("Reading Wave File:\t\tCOMPLETE\n\n");
+
+    printf("Reading Wave Headers:\t\tCOMPLETE\n\n");
 }
 
-void displayCompleteWave() {
-    char displayBuffer[100];
 
-    printf("Display Wave File Details:\t...\n");
+void readWaveFileDataSamples() {
+    if (wave.waveFormatChunk.wFormatTag == 1) {
+        printf("Begin Reading PCM data:\t\t...\n");
+        
+        // numSamples = size of data in bits / (bits per sample * num of channels)
+        numSamples = (wave.waveDataChunk.dwChunkSize * 8) / (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels);
+        
+        // sizeOfEachSample = size of each sample in bytes
+        sizeOfEachSample = (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels) / 8;
+        
+        // printf("%lu\n%u\n", numSamples, sizeOfEachSample);
+        wave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
+        if (wave.waveDataChunk.sampleData == NULL) {
+            printf("Could not allocate enough memory to read data samples\n");
+            return;
+        }
+
+        for (int i = 0; i < numSamples; i++) {
+            fread(buffer, sizeOfEachSample, 1, fp);
+            wave.waveDataChunk.sampleData[i] = (buffer[0]) | (buffer[1] << 8);
+        }
+
+        printf("Reading PCM data:\t\tCOMPLETE\n\n");
+    } else if (wave.waveFormatChunk.wFormatTag == 7) {
+        printf("Begin Reading Mu Law data:\t...");
+        printf("Reading Mu Law data:\t\tCOMPLETE\n\n");        
+    }
+}
+
+
+void readWaveFile() {    
+    readWaveFileHeaders();
+    readWaveFileDataSamples();  
+}
+
+
+void displayWaveHeaders() {
+    // char displayBuffer[100];
+
+    printf("Display Wave Headers:\t...\n");
 
     fwrite("(01-04): sGroupID\t\t", 1, 19, stdout);
     fwrite(wave.waveHeader.sGroupID, sizeof(wave.waveHeader.sGroupID), 1, stdout);
@@ -101,8 +136,42 @@ void displayCompleteWave() {
 
     printf("\n(41-44): dwChunkSize\t\t%u", wave.waveDataChunk.dwChunkSize);
 
+    printf("\nDisplaying Wave Headers:\t\tCOMPLETE\n\n");
+}
 
-    printf("\n\n");
+
+void displayWaveDataSamples() {
+    printf("Display Wave Data Samples:\t\t...\n");
+    for (int i = 0; i < numSamples; i++) {
+        printf("Sample %i:\t%hhx\n", i, wave.waveDataChunk.sampleData[i]);
+    }
+    printf("Displaying Wave Data Samples:\t\tCOMPLETE\n\n");
+}
+
+void saveWaveDataSamples() {
+    printf("Saving Wave Data Samples to \"display.txt\"...\t");
+    FILE *fpwriter = fopen("display.txt", "w");
+    if (fpwriter == NULL) {
+        printf("Could not write to \"display.txt\"");
+        return;
+    }
+    char str[50];
+    sprintf(str, "Wave Data Samples");
+    fwrite(str, 1, strlen(str), fpwriter);
+    for (int i = 0; i < numSamples; i++) {
+        sprintf(str, "\nSample %i:\t%d", i, wave.waveDataChunk.sampleData[i]);
+        fwrite(str, 1, strlen(str), fpwriter);
+    }
+    fwrite("\n", 1, 1, fpwriter);
+    fclose(fpwriter);
+    printf("DONE\n\n");
+}
+
+
+void displayCompleteWave() {
+    displayWaveHeaders();
+    // displayWaveDataSamples();
+    saveWaveDataSamples();
 }
 
 
@@ -122,6 +191,7 @@ int main (int argc, char **argv) {
     readWaveFile();
     displayCompleteWave();
 
+    free(wave.waveDataChunk.sampleData);
     fclose(fp);
     return 0;
 }
