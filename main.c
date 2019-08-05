@@ -78,9 +78,11 @@ void readWaveFileDataSamples() {
         
         // numSamples = size of data in bits / (bits per sample * num of channels)
         numSamples = (wave.waveDataChunk.dwChunkSize * 8) / (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels);
-        
+        printf("numSamples:\t%lu\n", numSamples);
+
         // sizeOfEachSample = size of each sample in bytes
         sizeOfEachSample = (wave.waveFormatChunk.dwBitsPerSample * wave.waveFormatChunk.wChannels) / 8;
+        printf("sizeOfEachSample:\t%lu\n", sizeOfEachSample);
         
         // printf("%lu\n%u\n", numSamples, sizeOfEachSample);
         wave.waveDataChunk.sampleData = calloc(numSamples, sizeOfEachSample);
@@ -91,13 +93,19 @@ void readWaveFileDataSamples() {
 
         for (int i = 0; i < numSamples; i++) {
             fread(buffer, sizeOfEachSample, 1, fp);
+            if (i > 18100 && i < 18105) {
+                // printf("Data Buffer: %.2x %.2x %.2x %.2x\n", buffer[0], buffer[1], buffer[2], buffer[3]);                
+            }
             wave.waveDataChunk.sampleData[i] = (buffer[0]) | (buffer[1] << 8);
         }
 
         printf("Reading PCM data:\t\tCOMPLETE\n\n");
-    } else if (wave.waveFormatChunk.wFormatTag == 7) {
-        printf("Begin Reading Mu Law data:\t...");
-        printf("Reading Mu Law data:\t\tCOMPLETE\n\n");        
+    } else //if (wave.waveFormatChunk.wFormatTag == 7) 
+    {
+        printf("Only PCM data please");
+        exit(1);
+        // printf("Begin Reading Mu Law data:\t...");
+        // printf("Reading Mu Law data:\t\tCOMPLETE\n\n");        
     }
 }
 
@@ -171,6 +179,7 @@ void saveWaveDataSamples() {
 
 void displayWaveHeadersAndSaveDataSamples() {
     displayWaveHeaders();
+    
     // displayWaveDataSamples();
     saveWaveDataSamples();
 }
@@ -211,28 +220,36 @@ __uint8_t generateCodeword(short sign, unsigned short magnitude) {
     if (magnitude & (1 << 12)) {
         chord = 0x7;
         step = (magnitude >> 8) & 0xF;
-    } else if (magnitude & (1 << 11)) {
+    } 
+    else if (magnitude & (1 << 11)) {
         chord = 0x6;
         step = (magnitude >> 7) & 0xF;
-    } else if (magnitude & (1 << 10)) {
+    } 
+    else if (magnitude & (1 << 10)) {
         chord = 0x5;
         step = (magnitude >> 6) & 0xF;
-    } else if (magnitude & (1 << 9)) {
+    } 
+    else if (magnitude & (1 << 9)) {
         chord = 0x4;
         step = (magnitude >> 5) & 0xF;
-    } else if (magnitude & (1 << 8)) {
+    } 
+    else if (magnitude & (1 << 8)) {
         chord = 0x3;
         step = (magnitude >> 4) & 0xF;
-    } else if (magnitude & (1 << 7)) {
+    } 
+    else if (magnitude & (1 << 7)) {
         chord = 0x2;
         step = (magnitude >> 3) & 0xF;
-    } else if (magnitude & (1 << 6)) {
+    } 
+    else if (magnitude & (1 << 6)) {
         chord = 0x1;
         step = (magnitude >> 2) & 0xF;
-    } else if (magnitude & (1 << 5)) {
+    } 
+    else if (magnitude & (1 << 5)) {
         chord = 0x0;
         step = (magnitude >> 1) & 0xF;
-    } else {
+    } 
+    else {
         chord = 0x0;
         step = magnitude;
     }
@@ -244,33 +261,33 @@ __uint8_t generateCodeword(short sign, unsigned short magnitude) {
 unsigned short getMagnitudeFromCodeword(char codeword) {
     int chord = (codeword & 0x70) >> 4;
     int step = codeword & 0x0F;
-    int msb = 1;
+    int msb = 1, lsb = 1;
     int magnitude;
     switch(chord) {
         
         default:
-        case 0x7:   magnitude = (step << 8) | (msb << 12);
+        case 0x7:   magnitude = (lsb << 7) | (step << 8) | (msb << 12);
         break;
 
-        case 0x6:   magnitude = (step << 7) | (msb << 11);
+        case 0x6:   magnitude = (lsb << 6) | (step << 7) | (msb << 11);
         break;
         
-        case 0x5:   magnitude = (step << 6) | (msb << 10);
+        case 0x5:   magnitude = (lsb << 5) | (step << 6) | (msb << 10);
         break;
         
-        case 0x4:   magnitude = (step << 5) | (msb << 9);
+        case 0x4:   magnitude = (lsb << 4) | (step << 5) | (msb << 9);
         break;
         
-        case 0x3:   magnitude = (step << 4) | (msb << 8);
+        case 0x3:   magnitude = (lsb << 3) | (step << 4) | (msb << 8);
         break;
         
-        case 0x2:   magnitude = (step << 3) | (msb << 7);
+        case 0x2:   magnitude = (lsb << 2) | (step << 3) | (msb << 7);
         break;
         
-        case 0x1:   magnitude = (step << 2) | (msb << 6);
+        case 0x1:   magnitude = (lsb << 1) | (step << 2) | (msb << 6);
         break;
         
-        case 0x0:   magnitude = (step << 1) | (msb << 5);
+        case 0x0:   magnitude = lsb | (step << 1) | (msb << 5);
         break;
     }
     return (unsigned short) magnitude;
@@ -284,10 +301,27 @@ void compressDataSamples() {
         printf("Could not allocate enough memory to store compressed data samples\n");
         return;
     }
+    // printf("\t\tDecimal\tHex\n");
+
+    int counter = 0;
+
     for (int i = 0; i < numSamples; i++) {
-        short sign = getSignFromSample(wave.waveDataChunk.sampleData[i]);
-        unsigned short magnitude = getMagnitudeFromSample(wave.waveDataChunk.sampleData[i]);
+        short sample = (wave.waveDataChunk.sampleData[i] >> 2);
+        short sign = getSignFromSample(sample);
+        unsigned short magnitude = getMagnitudeFromSample(sample) + 33;
         __uint8_t codeword = generateCodeword(sign, magnitude);
+        // if (i > 18100 && i < 18105) {
+        //     short sample = wave.waveDataChunk.sampleData[i];
+        //     printf("Sample:\t\t%hd\t%hx\n", sample, sample);
+        //     printf("Sample >> 2:\t%hd\t%hx\n", sample >> 2, sample >> 2);
+        //     printf("Codeword:\t%hhu\t%hhx\n\n", codeword, codeword);
+        //     printf("~(Codeword):\t%hhu\t%hhx\n\n", ~codeword, ~codeword);
+        //     // printf("Data Buffer: %.2x %.2x %.2x %.2x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+        // }
+        if (sample > 0 && sample < 11 && counter++ < 10) {
+            printf("sample:\t\t%hd\ncodeword:\t%hhu\t%x\n\n", sample, codeword, codeword);
+        }
+        codeword = ~codeword;
         waveCompressed.waveDataChunkCompressed.sampleData[i] = codeword;
     }
     printf("COMPLETE\n\n");
@@ -296,11 +330,14 @@ void compressDataSamples() {
 
 void decompressDataSamples() {
     printf("Begin Decompressing Data Samples:\n...\n");
+    __uint8_t codeword;
     for (int i = 0; i < numSamples; i++) {
-        short sign = waveCompressed.waveDataChunkCompressed.sampleData[i] & 0x80;
-        unsigned short magnitude = getMagnitudeFromCodeword(waveCompressed.waveDataChunkCompressed.sampleData[i]);
+        codeword = ~(waveCompressed.waveDataChunkCompressed.sampleData[i]);
+        // codeword = (waveCompressed.waveDataChunkCompressed.sampleData[i]);
+        short sign = (codeword & 0x80) >> 7;
+        unsigned short magnitude = (getMagnitudeFromCodeword(codeword) - 33);// << 2;
         short sample = (short) (sign ? magnitude : -magnitude);
-        wave.waveDataChunk.sampleData[i] = sample;
+        wave.waveDataChunk.sampleData[i] = sample << 2;
     }
     printf("COMPLETE\n\n");
 }
@@ -329,20 +366,131 @@ void saveMuLawWaveFile() {
         return;
     }
     
+    // headers
     fwrite(wave.waveHeader.sGroupID, sizeof(wave.waveHeader.sGroupID), 1, fpwriter);
     
     convertIntToLittleEndian(wave.waveHeader.dwFileLength); 
     fwrite(buffer, sizeof(buffer), 1, fpwriter);
-    
-    // convertIntToLittleEndian(wave.waveHeader.sRiffType); 
-    // fwrite(buffer, sizeof(buffer), 1, fpwriter);
 
     fwrite(wave.waveHeader.sRiffType, sizeof(wave.waveHeader.sRiffType), 1, fpwriter);
+
+    fwrite(wave.waveFormatChunk.sGroupID, sizeof(wave.waveFormatChunk.sGroupID), 1, fpwriter);
+
+    convertIntToLittleEndian(wave.waveFormatChunk.dwChunkSize); 
+    fwrite(buffer, sizeof(buffer), 1, fpwriter);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.wFormatTag); 
+    fwrite(buffer, sizeof(__uint16_t), 1, fpwriter);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.wChannels); 
+    fwrite(buffer, sizeof(__uint16_t), 1, fpwriter);
+    
+    convertIntToLittleEndian(wave.waveFormatChunk.dwSamplesPerSec); 
+    fwrite(buffer, sizeof(buffer), 1, fpwriter);
+
+    convertIntToLittleEndian(wave.waveFormatChunk.dwAvgBytesPerSec); 
+    fwrite(buffer, sizeof(buffer), 1, fpwriter);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.wBlockAlign); 
+    fwrite(buffer, sizeof(__uint16_t), 1, fpwriter);
+
+    convertShortToLittleEndian(wave.waveFormatChunk.dwBitsPerSample); 
+    fwrite(buffer, sizeof(__uint16_t), 1, fpwriter);
+
+    fwrite(wave.waveDataChunk.sGroupID, sizeof(wave.waveDataChunk.sGroupID), 1, fpwriter);
+
+    convertIntToLittleEndian(wave.waveDataChunk.dwChunkSize); 
+    fwrite(buffer, sizeof(buffer), 1, fpwriter);
+
+    // data
+    for (int i = 0; i < numSamples; i++) {
+        convertShortToLittleEndian(wave.waveDataChunk.sampleData[i]);
+        // if (i > 18100 && i < 18105) {
+        //     printf("Data Buffer: %.2x %.2x %.2x %.2x\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+        // }
+        fwrite(buffer, sizeOfEachSample, 1, fpwriter);
+    }
 
     fclose(fpwriter);
     printf("COMPLETE\n\n");
 }
 
+/*
+const char* hexToBin(char *hexString) {
+    printf("inside %x\n", hexString);
+    char hex;
+    sprintf(hex, "%x", hexString);
+    static char binary[10];
+    switch((hex & 0xF0) >> 1) {
+        case 0x0: strcpy(binary,"0000"); break;
+        case 0x1: strcpy(binary,"0001"); break;
+        case 0x2: strcpy(binary,"0010"); break;
+        case 0x3: strcpy(binary,"0011"); break;
+        case 0x4: strcpy(binary,"0100"); break;
+        case 0x5: strcpy(binary,"0101"); break;
+        case 0x6: strcpy(binary,"0110"); break;
+        case 0x7: strcpy(binary,"0111"); break;
+        case 0x8: strcpy(binary,"1000"); break;
+        case 0x9: strcpy(binary,"1001"); break;
+        case 0xa: strcpy(binary,"1010"); break;
+        case 0xb: strcpy(binary,"1011"); break;
+        case 0xc: strcpy(binary,"1100"); break;
+        case 0xd: strcpy(binary,"1101"); break;
+        case 0xe: strcpy(binary,"1110"); break;
+        case 0xf: strcpy(binary,"1111"); break;
+    }
+    strcat(binary, " ");
+    switch(hex & 0x0F) {
+        case 0x0: strcat(binary,"0000"); break;
+        case 0x1: strcat(binary,"0001"); break;
+        case 0x2: strcat(binary,"0010"); break;
+        case 0x3: strcat(binary,"0011"); break;
+        case 0x4: strcat(binary,"0100"); break;
+        case 0x5: strcat(binary,"0101"); break;
+        case 0x6: strcat(binary,"0110"); break;
+        case 0x7: strcat(binary,"0111"); break;
+        case 0x8: strcat(binary,"1000"); break;
+        case 0x9: strcat(binary,"1001"); break;
+        case 0xa: strcat(binary,"1010"); break;
+        case 0xb: strcat(binary,"1011"); break;
+        case 0xc: strcat(binary,"1100"); break;
+        case 0xd: strcat(binary,"1101"); break;
+        case 0xe: strcat(binary,"1110"); break;
+        case 0xf: strcat(binary,"1111"); break;
+    }
+    return binary;
+}
+
+
+void testing() {
+    printf("Begin testing Mu Law compression\n...\n");
+
+    short sample[] = {33, 66, 32145, 32178};
+
+    short sign;
+    unsigned short magnitude;
+    __uint8_t codeword;
+
+
+    printf("sample\tcode\thex\tbinary\n");
+    for (int i = 0; i < 4; i++) {
+        sign = getSignFromSample(sample[i]);
+        magnitude = getMagnitudeFromSample(sample[i]);
+        codeword = generateCodeword(sign, magnitude);
+        // printf("sample:\t\t%hd\t%x\nsign:\t\t%hd\nmagnitude:\t%hu\ncodeword:\t%hhu\t%x\n\n", sample[i], sample[i], sign, magnitude, codeword, codeword);
+        // const char *binary = hexToBin(codeword);
+        char hex[3];
+        sprintf(hex, "%x", codeword);
+        printf("%d\t%u\t%x\t%x\n\n", sample[i], codeword, codeword, hexToBin(hex));
+    }
+
+    // for (int i = 0; i < 32; i++) {
+    //     printf("%s\n", hexToBin(i));
+    // }
+    
+    printf("COMPLETE\n\n");    
+}
+*/
 
 int main (int argc, char **argv) {
     if (argc < 2) {
@@ -363,6 +511,8 @@ int main (int argc, char **argv) {
     saveCompressedDataSamples();
     decompressDataSamples();
     saveMuLawWaveFile();
+
+    // testing();
 
     free(waveCompressed.waveDataChunkCompressed.sampleData);
     free(wave.waveDataChunk.sampleData);
