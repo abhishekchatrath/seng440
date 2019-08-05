@@ -67,3 +67,29 @@ struct WAVE_COMPRESSED {
     struct WAVE_FORMAT_CHUNK            waveFormatChunk;
     struct WAVE_DATA_CHUNK_COMPRESSED   waveDataChunkCompressed;
 };
+
+
+// Read Wave File
+void readWaveFileHeaders();
+void readWaveFileDataSamples();
+void readWaveFile();
+
+// Mu Law Compression and Decompression
+void compressDataSamples();
+void decompressDataSamples();
+
+// Helper Functions
+short getSignFromSample(short sample);
+unsigned short getMagnitudeFromSample(short sample);
+unsigned short getMagnitudeFromCodeword(char codeword);
+__uint8_t generateCodeword(short sign, unsigned short magnitude);
+void convertIntToLittleEndian(__uint32_t chunk);
+void convertShortToLittleEndian(__uint16_t chunk);
+
+// Terminal Display and File Writing Functions
+void displayWaveHeaders();
+void displayWaveDataSamples();
+void saveWaveDataSamples();
+void displayWaveHeadersAndSaveDataSamples();
+void saveCompressedDataSamples();
+void saveMuLawWaveFile();
