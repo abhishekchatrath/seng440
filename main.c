@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "main.h"
+#include <time.h>
 
 FILE *fp;
 unsigned char buffer[4];
@@ -10,6 +11,9 @@ struct WAVE_COMPRESSED waveCompressed;
 
 unsigned long numSamples;
 unsigned int sizeOfEachSample;
+
+time_t start, stop;
+double duration;
 
 
 int main (int argc, char **argv) {
@@ -27,7 +31,11 @@ int main (int argc, char **argv) {
 
     readWaveFile();
     displayWaveHeadersAndSaveDataSamples();
+    
+    start = clock();
     compressDataSamples();
+    stop = clock();
+
     saveCompressedDataSamples();
     decompressDataSamples();
     saveMuLawWaveFile();
@@ -35,6 +43,10 @@ int main (int argc, char **argv) {
     free(waveCompressed.waveDataChunkCompressed.sampleData);
     free(wave.waveDataChunk.sampleData);
     fclose(fp);
+
+    duration = (double) (stop - start) / CLOCKS_PER_SEC;
+    printf("Audio Compression (Mu Law):\t%fs sec\n\n", duration);
+
     return 0;
 }
 
