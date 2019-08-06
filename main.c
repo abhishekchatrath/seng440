@@ -132,7 +132,8 @@ void readWaveFileDataSamples() {
             return;
         }
 
-        for (int i = 0; i < numSamples; i++) {
+        int i;
+        for (i = 0; i < numSamples; i++) {
             fread(buffer, sizeOfEachSample, 1, fp);
             wave.waveDataChunk.sampleData[i] = (buffer[0]) | (buffer[1] << 8);
         }
@@ -163,7 +164,8 @@ void compressDataSamples() {
         printf("Could not allocate enough memory to store compressed data samples\n");
         return;
     }
-    for (int i = 0; i < numSamples; i++) {
+    int i;
+    for (i = 0; i < numSamples; i++) {
         short sample = (wave.waveDataChunk.sampleData[i] >> 2);
         short sign = getSignFromSample(sample);
         unsigned short magnitude = getMagnitudeFromSample(sample) + 33;
@@ -178,7 +180,8 @@ void compressDataSamples() {
 void decompressDataSamples() {
     printf("Begin Decompressing Data Samples:\n...\n");
     __uint8_t codeword;
-    for (int i = 0; i < numSamples; i++) {
+    int i;
+    for (i = 0; i < numSamples; i++) {
         codeword = ~(waveCompressed.waveDataChunkCompressed.sampleData[i]);
         short sign = (codeword & 0x80) >> 7;
         unsigned short magnitude = (getMagnitudeFromCodeword(codeword) - 33);
@@ -342,7 +345,8 @@ void displayWaveHeaders() {
 
 void displayWaveDataSamples() {
     printf("Display Wave Data Samples:\t\t...\n");
-    for (int i = 0; i < numSamples; i++) {
+    int i;
+    for (i = 0; i < numSamples; i++) {
         printf("Sample %i:\t%hhx\n", i, wave.waveDataChunk.sampleData[i]);
     }
     printf("Displaying Wave Data Samples:\tCOMPLETE\n\n");
@@ -360,7 +364,8 @@ void saveWaveDataSamples() {
     char str[50];
     sprintf(str, "Wave Data Samples");
     fwrite(str, 1, strlen(str), fpwriter);
-    for (int i = 0; i < numSamples; i++) {
+    int i;
+    for (i = 0; i < numSamples; i++) {
         sprintf(str, "\nSample %i:\t%d", i, wave.waveDataChunk.sampleData[i]);
         fwrite(str, 1, strlen(str), fpwriter);
     }
@@ -381,7 +386,8 @@ void saveCompressedDataSamples() {
     char str[50];
     sprintf(str, "Wave Data Samples Compressed Using Mu Law");
     fwrite(str, 1, strlen(str), fpwriter);
-    for (int i = 0; i < numSamples; i++) {
+    int i;
+    for (i = 0; i < numSamples; i++) {
         sprintf(str, "\nSample %i:\t%d", i, waveCompressed.waveDataChunkCompressed.sampleData[i]);
         fwrite(str, 1, strlen(str), fpwriter);
     }
