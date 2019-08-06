@@ -1,6 +1,6 @@
 mu:
 	clear
-	gcc main.c -o main.o
+	gcc main.c -o main.o -std=c99
 	./main.o Voice001.wav
 test:
 	clear
