@@ -13,7 +13,8 @@ unsigned long numSamples;
 unsigned int sizeOfEachSample;
 
 time_t start, stop;
-double duration;
+double compressionDuration;
+double decompressionDuration;
 
 
 int main (int argc, char **argv) {
@@ -35,18 +36,24 @@ int main (int argc, char **argv) {
     start = clock();
     compressDataSamples();
     stop = clock();
+    compressionDuration = (double) (stop - start) / CLOCKS_PER_SEC;
 
     saveCompressedDataSamples();
+
+    start = clock();
     decompressDataSamples();
+    stop = clock();
+    decompressionDuration = (double) (stop - start) / CLOCKS_PER_SEC;
+
     saveMuLawWaveFile();
 
     free(waveCompressed.waveDataChunkCompressed.sampleData);
     free(wave.waveDataChunk.sampleData);
     fclose(fp);
 
-    duration = (double) (stop - start) / CLOCKS_PER_SEC;
-    printf("Audio Compression (Mu Law):\t%fs sec\n\n", duration);
-
+    printf("Audio Compression (Mu Law):\t\t%fs sec\n", compressionDuration);
+    printf("Audio Decompression (Inverse Mu Law):\t%fs sec\n\n", decompressionDuration);
+    
     return 0;
 }
 
@@ -256,33 +263,32 @@ unsigned short getMagnitudeFromCodeword(char codeword) {
     int step = codeword & 0x0F;
     int msb = 1, lsb = 1;
     int magnitude;
-    switch(chord) {
-        
-        default:
-        case 0x7:   magnitude = (lsb << 7) | (step << 8) | (msb << 12);
-        break;
-
-        case 0x6:   magnitude = (lsb << 6) | (step << 7) | (msb << 11);
-        break;
-        
-        case 0x5:   magnitude = (lsb << 5) | (step << 6) | (msb << 10);
-        break;
-        
-        case 0x4:   magnitude = (lsb << 4) | (step << 5) | (msb << 9);
-        break;
-        
-        case 0x3:   magnitude = (lsb << 3) | (step << 4) | (msb << 8);
-        break;
-        
-        case 0x2:   magnitude = (lsb << 2) | (step << 3) | (msb << 7);
-        break;
-        
-        case 0x1:   magnitude = (lsb << 1) | (step << 2) | (msb << 6);
-        break;
-        
-        case 0x0:   magnitude = lsb | (step << 1) | (msb << 5);
-        break;
+    
+    if (chord == 0x7) {
+        magnitude = (lsb << 7) | (step << 8) | (msb << 12);
     }
+    else if (chord == 0x6) {
+        magnitude = (lsb << 6) | (step << 7) | (msb << 11);
+    }
+    else if (chord == 0x5) {
+        magnitude = (lsb << 5) | (step << 6) | (msb << 10);
+    }
+    else if (chord == 0x4) {
+        magnitude = (lsb << 4) | (step << 5) | (msb << 9);
+    }
+    else if (chord == 0x3) {
+        magnitude = (lsb << 3) | (step << 4) | (msb << 8);
+    }
+    else if (chord == 0x2) {
+        magnitude = (lsb << 2) | (step << 3) | (msb << 7);
+    }
+    else if (chord == 0x1) {
+        magnitude = (lsb << 1) | (step << 2) | (msb << 6);
+    }
+    else if (chord == 0x0) {
+        magnitude = lsb | (step << 1) | (msb << 5);
+    }
+
     return (unsigned short) magnitude;
 }
 
