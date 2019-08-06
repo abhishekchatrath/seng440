@@ -38,16 +38,20 @@ int main (int argc, char **argv) {
     __uint64_t numSamples = readWaveFile(fp, wave);
     displayWaveHeadersAndSaveDataSamples(wave, numSamples);
 
+    printf("Begin Compressing Data Samples:\n...\n");
     start = clock();
     __uint8_t *codewords = compressDataSamples(wave, numSamples);
     stop = clock();
+    printf("COMPLETE\n\n");
     compressionDuration = (double) (stop - start) / CLOCKS_PER_SEC;
 
     saveCompressedDataSamples(codewords, numSamples);
 
+    printf("Begin Decompressing Data Samples:\n...\n");
     start = clock();
     decompressDataSamples(wave, codewords, numSamples);
     stop = clock();
+    printf("COMPLETE\n\n");
     decompressionDuration = (double) (stop - start) / CLOCKS_PER_SEC;
 
     saveMuLawWaveFile(wave, numSamples);
@@ -171,41 +175,169 @@ __uint64_t readWaveFile(FILE *fp, struct WAVE *wave) {
 // compress and decompress
 
 __uint8_t * compressDataSamples(struct WAVE *wave, __uint64_t numSamples) {
-    printf("Begin Compressing Data Samples:\n...\n");
     __uint8_t *codewords = calloc(numSamples, sizeof(char));
-    printf("\nyo\n");
     if (codewords == NULL) {
         printf("Could not allocate enough memory to store compressed data samples\n");
-        return;
+        return 0;
     }
     volatile short *sampleData = wave->waveDataChunk.sampleData;
-    short sample, sign;
-    __uint16_t magnitude;
+    short sample1, sample2, sample3, sample4, sample5;
+    short sign1, sign2, sign3, sign4, sign5;
+    __uint16_t magnitude1, magnitude2, magnitude3, magnitude4, magnitude5;
     __uint8_t codeword;
-    int i;
-    for (i = 0; i < numSamples; i++) {
-        sample = (sampleData[i] >> 2);
-        magnitude = sample < 0 ? -sample : sample;
-        sign = sample >= 0;
-        magnitude += 33;
-        codewords[i] = ~(generateCodeword(sign, magnitude));
+    
+    int i = 5;
+
+    sample1 = (sampleData[0] >> 2);
+    sample2 = (sampleData[1] >> 2);
+    sample3 = (sampleData[2] >> 2);
+    sample4 = (sampleData[3] >> 2);
+    sample5 = (sampleData[4] >> 2);
+
+    numSamples -= i;
+
+    magnitude1 = sample1 < 0 ? -sample1 : sample1;
+    magnitude2 = sample2 < 0 ? -sample2 : sample2;
+    magnitude3 = sample3 < 0 ? -sample3 : sample3;
+    magnitude4 = sample4 < 0 ? -sample4 : sample4;
+    magnitude5 = sample5 < 0 ? -sample5 : sample5;
+
+    sign1 = sample1 >= 0;
+    sign2 = sample2 >= 0;
+    sign3 = sample3 >= 0;
+    sign4 = sample4 >= 0;
+    sign5 = sample5 >= 0;
+
+    magnitude1 += 33;
+    magnitude2 += 33;
+    magnitude3 += 33;
+    magnitude4 += 33;
+    magnitude5 += 33;
+
+    codewords[0] = ~(generateCodeword(sign1, magnitude1));
+    codewords[1] = ~(generateCodeword(sign2, magnitude2));
+    codewords[2] = ~(generateCodeword(sign3, magnitude3));
+    codewords[3] = ~(generateCodeword(sign4, magnitude4));
+    codewords[4] = ~(generateCodeword(sign5, magnitude5));
+
+    while (numSamples >= 5) {
+        sample1 = (sampleData[i] >> 2);
+        sample2 = (sampleData[i + 1] >> 2);
+        sample3 = (sampleData[i + 2] >> 2);
+        sample4 = (sampleData[i + 3] >> 2);
+        sample5 = (sampleData[i + 4] >> 2);
+
+        magnitude1 = sample1 < 0 ? -sample1 : sample1;
+        magnitude2 = sample2 < 0 ? -sample2 : sample2;
+        magnitude3 = sample3 < 0 ? -sample3 : sample3;
+        magnitude4 = sample4 < 0 ? -sample4 : sample4;
+        magnitude5 = sample5 < 0 ? -sample5 : sample5;
+
+        sign1 = sample1 >= 0;
+        sign2 = sample2 >= 0;
+        sign3 = sample3 >= 0;
+        sign4 = sample4 >= 0;
+        sign5 = sample5 >= 0;
+
+        numSamples -= 5;
+        i += 5;
+
+        magnitude1 += 33;
+        magnitude2 += 33;
+        magnitude3 += 33;
+        magnitude4 += 33;
+        magnitude5 += 33;
+
+        codewords[i - 5] = ~(generateCodeword(sign1, magnitude1));
+        codewords[i - 4] = ~(generateCodeword(sign2, magnitude2));
+        codewords[i - 3] = ~(generateCodeword(sign3, magnitude3));
+        codewords[i - 2] = ~(generateCodeword(sign4, magnitude4));
+        codewords[i - 1] = ~(generateCodeword(sign5, magnitude5));
     }
-    printf("COMPLETE\n\n");
+
+    switch (numSamples) {
+        case 4: 
+        sample1 = (sampleData[i] >> 2);
+        sample2 = (sampleData[i + 1] >> 2);
+        sample3 = (sampleData[i + 2] >> 2);
+        sample4 = (sampleData[i + 3] >> 2);
+        magnitude1 = sample1 < 0 ? -sample1 : sample1;
+        magnitude2 = sample2 < 0 ? -sample2 : sample2;
+        magnitude3 = sample3 < 0 ? -sample3 : sample3;
+        magnitude4 = sample4 < 0 ? -sample4 : sample4;
+        sign1 = sample1 >= 0;
+        sign2 = sample2 >= 0;
+        sign3 = sample3 >= 0;
+        sign4 = sample4 >= 0;
+        magnitude1 += 33;
+        magnitude2 += 33;
+        magnitude3 += 33;
+        magnitude4 += 33;
+        codewords[i] = ~(generateCodeword(sign1, magnitude1));
+        codewords[i + 1] = ~(generateCodeword(sign2, magnitude2));
+        codewords[i + 2] = ~(generateCodeword(sign3, magnitude3));
+        codewords[i - 2] = ~(generateCodeword(sign4, magnitude4));
+        break;
+
+        case 3: 
+        sample1 = (sampleData[i] >> 2);
+        sample2 = (sampleData[i + 1] >> 2);
+        sample3 = (sampleData[i + 2] >> 2);
+        magnitude1 = sample1 < 0 ? -sample1 : sample1;
+        magnitude2 = sample2 < 0 ? -sample2 : sample2;
+        magnitude3 = sample3 < 0 ? -sample3 : sample3;
+        sign1 = sample1 >= 0;
+        sign2 = sample2 >= 0;
+        sign3 = sample3 >= 0;
+        magnitude1 += 33;
+        magnitude2 += 33;
+        magnitude3 += 33;
+        codewords[i] = ~(generateCodeword(sign1, magnitude1));
+        codewords[i + 1] = ~(generateCodeword(sign2, magnitude2));
+        codewords[i + 2] = ~(generateCodeword(sign3, magnitude3));
+        break;
+
+        case 2: 
+        sample1 = (sampleData[i] >> 2);
+        sample2 = (sampleData[i + 1] >> 2);
+        magnitude1 = sample1 < 0 ? -sample1 : sample1;
+        magnitude2 = sample2 < 0 ? -sample2 : sample2;
+        sign1 = sample1 >= 0;
+        sign2 = sample2 >= 0;
+        magnitude1 += 33;
+        magnitude2 += 33;
+        codewords[i] = ~(generateCodeword(sign1, magnitude1));
+        codewords[i + 1] = ~(generateCodeword(sign2, magnitude2));
+        break;
+
+        case 1: 
+        sample1 = (sampleData[i] >> 2);
+        magnitude1 = sample1 < 0 ? -sample1 : sample1;
+        sign1 = sample1 >= 0;
+        magnitude1 += 33;
+        codewords[i] = ~(generateCodeword(sign1, magnitude1));
+        // break;
+        case 0:
+        default:    break;
+    }
+
     return codewords;
 }
 
 
 void decompressDataSamples(struct WAVE *wave, __uint8_t *codewords, __uint64_t numSamples) {
-    printf("Begin Decompressing Data Samples:\n...\n");
     __uint8_t codeword;
-    for (int i = 0; i < numSamples; i++) {
+    __uint16_t magnitude;
+    short sign, sample;
+    int i = 0;
+    for (; i < numSamples;) {
         codeword = ~(codewords[i]);
-        short sign = (codeword & 0x80) >> 7;
-        unsigned short magnitude = (getMagnitudeFromCodeword(codeword) - 33);
-        short sample = (short) (sign ? magnitude : -magnitude);
-        wave->waveDataChunk.sampleData[i] = sample << 2;
+        magnitude = getMagnitudeFromCodeword(codeword);
+        sign = (codeword & 0x80) >> 7;
+        magnitude -= 33;
+        sample = (short) (sign ? magnitude : -magnitude);
+        wave->waveDataChunk.sampleData[i++] = sample << 2;
     }
-    printf("COMPLETE\n\n");
 }
 
 
@@ -271,33 +403,33 @@ __uint8_t generateCodeword(short sign, unsigned short magnitude) {
 unsigned short getMagnitudeFromCodeword(char codeword) {
     int chord = (codeword & 0x70) >> 4;
     int step = codeword & 0x0F;
-    int msb = 1, lsb = 1;
+    int bit = 1;
     int magnitude;
     switch(chord) {
         
         default:
-        case 0x7:   magnitude = (lsb << 7) | (step << 8) | (msb << 12);
+        case 0x0:   magnitude = bit | (step << 1) | (bit << 5);
         break;
 
-        case 0x6:   magnitude = (lsb << 6) | (step << 7) | (msb << 11);
+        case 0x1:   magnitude = (bit << 1) | (step << 2) | (bit << 6);
         break;
         
-        case 0x5:   magnitude = (lsb << 5) | (step << 6) | (msb << 10);
+        case 0x2:   magnitude = (bit << 2) | (step << 3) | (bit << 7);
         break;
         
-        case 0x4:   magnitude = (lsb << 4) | (step << 5) | (msb << 9);
+        case 0x3:   magnitude = (bit << 3) | (step << 4) | (bit << 8);
         break;
         
-        case 0x3:   magnitude = (lsb << 3) | (step << 4) | (msb << 8);
+        case 0x4:   magnitude = (bit << 4) | (step << 5) | (bit << 9);
         break;
         
-        case 0x2:   magnitude = (lsb << 2) | (step << 3) | (msb << 7);
+        case 0x5:   magnitude = (bit << 5) | (step << 6) | (bit << 10);
         break;
         
-        case 0x1:   magnitude = (lsb << 1) | (step << 2) | (msb << 6);
+        case 0x6:   magnitude = (bit << 6) | (step << 7) | (bit << 11);
         break;
         
-        case 0x0:   magnitude = lsb | (step << 1) | (msb << 5);
+        case 0x7:   magnitude = (bit << 7) | (step << 8) | (bit << 12);
         break;
     }
     return (unsigned short) magnitude;
