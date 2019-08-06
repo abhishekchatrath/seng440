@@ -194,7 +194,7 @@ __uint8_t * compressDataSamples(struct WAVE *wave, __uint64_t numSamples) {
     sample4 = (sampleData[3] >> 2);
     sample5 = (sampleData[4] >> 2);
 
-    numSamples -= i;
+    numSamples -= 5;
 
     magnitude1 = sample1 < 0 ? -sample1 : sample1;
     magnitude2 = sample2 < 0 ? -sample2 : sample2;
@@ -326,17 +326,166 @@ __uint8_t * compressDataSamples(struct WAVE *wave, __uint64_t numSamples) {
 
 
 void decompressDataSamples(struct WAVE *wave, __uint8_t *codewords, __uint64_t numSamples) {
-    __uint8_t codeword;
-    __uint16_t magnitude;
-    short sign, sample;
-    int i = 0;
-    for (; i < numSamples;) {
-        codeword = ~(codewords[i]);
-        magnitude = getMagnitudeFromCodeword(codeword);
-        sign = (codeword & 0x80) >> 7;
-        magnitude -= 33;
-        sample = (short) (sign ? magnitude : -magnitude);
-        wave->waveDataChunk.sampleData[i++] = sample << 2;
+    __uint8_t codeword1, codeword2, codeword3, codeword4, codeword5;
+    __uint16_t magnitude1, magnitude2, magnitude3, magnitude4, magnitude5;
+    short sample1, sample2, sample3, sample4, sample5;
+    short sign1, sign2, sign3, sign4, sign5;
+    
+    int i = 5;
+    
+    codeword1 = ~(codewords[0]);
+    codeword2 = ~(codewords[1]);
+    codeword3 = ~(codewords[2]);
+    codeword4 = ~(codewords[3]);
+    codeword5 = ~(codewords[4]);
+    
+    magnitude1 = getMagnitudeFromCodeword(codeword1);
+    magnitude2 = getMagnitudeFromCodeword(codeword2);
+    magnitude3 = getMagnitudeFromCodeword(codeword3);
+    magnitude4 = getMagnitudeFromCodeword(codeword4);
+    magnitude5 = getMagnitudeFromCodeword(codeword5);
+    
+    sign1 = (codeword1 & 0x80) >> 7;
+    sign2 = (codeword2 & 0x80) >> 7;
+    sign3 = (codeword3 & 0x80) >> 7;
+    sign4 = (codeword4 & 0x80) >> 7;
+    sign5 = (codeword5 & 0x80) >> 7;
+    
+    magnitude1 -= 33;
+    magnitude2 -= 33;
+    magnitude3 -= 33;
+    magnitude4 -= 33;
+    magnitude5 -= 33;
+    
+    numSamples -= 5;
+    
+    sample1 = (short) (sign1 ? magnitude1 : -magnitude1);
+    sample2 = (short) (sign2 ? magnitude2 : -magnitude2);
+    sample3 = (short) (sign3 ? magnitude3 : -magnitude3);
+    sample4 = (short) (sign4 ? magnitude4 : -magnitude4);
+    sample5 = (short) (sign5 ? magnitude5 : -magnitude5);
+    
+    wave->waveDataChunk.sampleData[0] = sample1 << 2;
+    wave->waveDataChunk.sampleData[1] = sample2 << 2;
+    wave->waveDataChunk.sampleData[2] = sample3 << 2;
+    wave->waveDataChunk.sampleData[3] = sample4 << 2;
+    wave->waveDataChunk.sampleData[4] = sample5 << 2;
+    
+    while (numSamples >= 5) {
+        codeword1 = ~(codewords[i]);
+        codeword2 = ~(codewords[i + 1]);
+        codeword3 = ~(codewords[i + 2]);
+        codeword4 = ~(codewords[i + 3]);
+        codeword5 = ~(codewords[i + 4]);
+
+        magnitude1 = getMagnitudeFromCodeword(codeword1);
+        magnitude2 = getMagnitudeFromCodeword(codeword2);
+        magnitude3 = getMagnitudeFromCodeword(codeword3);
+        magnitude4 = getMagnitudeFromCodeword(codeword4);
+        magnitude5 = getMagnitudeFromCodeword(codeword5);
+
+        sign1 = (codeword1 & 0x80) >> 7;
+        sign2 = (codeword2 & 0x80) >> 7;
+        sign3 = (codeword3 & 0x80) >> 7;
+        sign4 = (codeword4 & 0x80) >> 7;
+        sign5 = (codeword5 & 0x80) >> 7;
+
+        magnitude1 -= 33;
+        magnitude2 -= 33;
+        magnitude3 -= 33;
+        magnitude4 -= 33;
+        magnitude5 -= 33;
+
+        numSamples -= 5;
+        i += 5;
+
+        sample1 = (short) (sign1 ? magnitude1 : -magnitude1);
+        sample2 = (short) (sign2 ? magnitude2 : -magnitude2);
+        sample3 = (short) (sign3 ? magnitude3 : -magnitude3);
+        sample4 = (short) (sign4 ? magnitude4 : -magnitude4);
+        sample5 = (short) (sign5 ? magnitude5 : -magnitude5);
+
+        wave->waveDataChunk.sampleData[i - 5] = sample1 << 2;
+        wave->waveDataChunk.sampleData[i - 4] = sample2 << 2;
+        wave->waveDataChunk.sampleData[i - 3] = sample3 << 2;
+        wave->waveDataChunk.sampleData[i - 2] = sample4 << 2;
+        wave->waveDataChunk.sampleData[i - 1] = sample5 << 2;
+    }
+
+    switch (numSamples) {
+        case 4:
+        codeword1 = ~(codewords[i]);
+        codeword2 = ~(codewords[i + 1]);
+        codeword3 = ~(codewords[i + 2]);
+        codeword4 = ~(codewords[i + 3]);
+        magnitude1 = getMagnitudeFromCodeword(codeword1);
+        magnitude2 = getMagnitudeFromCodeword(codeword2);
+        magnitude3 = getMagnitudeFromCodeword(codeword3);
+        magnitude4 = getMagnitudeFromCodeword(codeword4);
+        sign1 = (codeword1 & 0x80) >> 7;
+        sign2 = (codeword2 & 0x80) >> 7;
+        sign3 = (codeword3 & 0x80) >> 7;
+        sign4 = (codeword4 & 0x80) >> 7;
+        magnitude1 -= 33;
+        magnitude2 -= 33;
+        magnitude3 -= 33;
+        magnitude4 -= 33;
+        sample1 = (short) (sign1 ? magnitude1 : -magnitude1);
+        sample2 = (short) (sign2 ? magnitude2 : -magnitude2);
+        sample3 = (short) (sign3 ? magnitude3 : -magnitude3);
+        sample4 = (short) (sign4 ? magnitude4 : -magnitude4);
+        wave->waveDataChunk.sampleData[i - 5] = sample1 << 2;
+        wave->waveDataChunk.sampleData[i - 4] = sample2 << 2;
+        wave->waveDataChunk.sampleData[i - 3] = sample3 << 2;
+        wave->waveDataChunk.sampleData[i - 2] = sample4 << 2;
+        break;
+
+        case 3:
+        codeword1 = ~(codewords[i]);
+        codeword2 = ~(codewords[i + 1]);
+        codeword3 = ~(codewords[i + 2]);
+        magnitude1 = getMagnitudeFromCodeword(codeword1);
+        magnitude2 = getMagnitudeFromCodeword(codeword2);
+        magnitude3 = getMagnitudeFromCodeword(codeword3);
+        sign1 = (codeword1 & 0x80) >> 7;
+        sign2 = (codeword2 & 0x80) >> 7;
+        sign3 = (codeword3 & 0x80) >> 7;
+        magnitude1 -= 33;
+        magnitude2 -= 33;
+        magnitude3 -= 33;
+        sample1 = (short) (sign1 ? magnitude1 : -magnitude1);
+        sample2 = (short) (sign2 ? magnitude2 : -magnitude2);
+        sample3 = (short) (sign3 ? magnitude3 : -magnitude3);
+        wave->waveDataChunk.sampleData[i - 5] = sample1 << 2;
+        wave->waveDataChunk.sampleData[i - 4] = sample2 << 2;
+        wave->waveDataChunk.sampleData[i - 3] = sample3 << 2;
+        break;
+
+        case 2:
+        codeword1 = ~(codewords[i]);
+        codeword2 = ~(codewords[i + 1]);
+        magnitude1 = getMagnitudeFromCodeword(codeword1);
+        magnitude2 = getMagnitudeFromCodeword(codeword2);
+        sign1 = (codeword1 & 0x80) >> 7;
+        sign2 = (codeword2 & 0x80) >> 7;
+        magnitude1 -= 33;
+        magnitude2 -= 33;
+        sample1 = (short) (sign1 ? magnitude1 : -magnitude1);
+        sample2 = (short) (sign2 ? magnitude2 : -magnitude2);
+        wave->waveDataChunk.sampleData[i - 5] = sample1 << 2;
+        wave->waveDataChunk.sampleData[i - 4] = sample2 << 2;
+        break;
+
+        case 1:
+        codeword1 = ~(codewords[i]);
+        magnitude1 = getMagnitudeFromCodeword(codeword1);
+        sign1 = (codeword1 & 0x80) >> 7;
+        magnitude1 -= 33;
+        sample1 = (short) (sign1 ? magnitude1 : -magnitude1);
+        wave->waveDataChunk.sampleData[i - 5] = sample1 << 2;
+        // break;
+        case 0:
+        default:    break;
     }
 }
 
