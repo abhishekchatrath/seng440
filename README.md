@@ -9,20 +9,28 @@ UVic SENG 440 Embedded Systems Project
 ## Optimizations
 Certain software optimization techniques were applied to `main.c` and saved in a new file `main_opt.c` (with its corresponding header file `main_opt.h`). These optimizations have been described below:
 
-### Global variables
+### Global Variables
 - `FILE *fp` was made local to `main()`
 - `struct WAVE wave` was made local to `main()`
 - `struct WAVE_COMPRESSED waveCompressed` was changed to `__uint8_t *codewords` local to `compressDataSamples()` and `main()`
 - `__uint64_t numSamples` was made local to `readWaveFile()` and `main()`
 
-### Strength Reduction
+<!-- ### Strength Reduction -->
 
-### Software pipelining
+<!-- ### Software pipelining -->
 
-### Loop unrolling
+### Loop Unrolling
+The following characteristics describe the process of loop unrolling implemented in `compressDataSamples()` and `decompressDataSamples()`: 
+- `for` loop of 3 statements was converted to a `while` loop of 1 statement
+- A block size of `5` was used to reduce the number of iterations required
+- 5 sets of variables were used for each statement type
+- Memory access was not blocked inherently since order of program followed over 5 statements of the same type with different variables used each time
+- Update statements of iterable `i` and `numSamples` were appropriately placed far enough from statements where they were being used
 
-### Other
+### Other Noteworthy Optimizations
 - `printf()` statements were removed from `compressDataSamples()` and `decompressDataSamples()`
+- `getSignFromSample()` logic and `getMagnitudeFromSample()` logic was evaluated inline for `compressDataSamples()`
+- `getMagnitudeFromCodeword()` first had its order of `if-else` statements changed from high chord-low chord to low-chord-high chord, then later was converted into a `switch-case` block of statements
 
 ## References
 - [1] Lesson 104: Audio Compression, SENG440 Embedded Systems, <em>Mihai Sima</em>. Accessed July 16th, 2019.
