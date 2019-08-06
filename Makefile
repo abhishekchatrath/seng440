@@ -13,3 +13,8 @@ testv:
 
 clean:
 	rm main.o
+	rm test.o
+opt:
+	clear
+	gcc main_opt.c -o main_opt.o
+	./main_opt.o Voice001.wav
